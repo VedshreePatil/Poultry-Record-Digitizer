@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+.idea/
+uploads/
+*.pyc
+*.db
+processed.png
+processed_debug.jpg
