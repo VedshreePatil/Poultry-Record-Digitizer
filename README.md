@@ -70,7 +70,7 @@ Built using Flask, OpenCV, EasyOCR, and Tesseract OCR, the system focuses on sma
 
 | Date Updated | Issue                                                 | Improvement Added                                            |
 | ------------ | ----------------------------------------------------- | ------------------------------------------------------------ |
-|              | Users could not upload another image after extraction | Added back navigation and re-upload workflow support         |
+| May 2026     | Users could not upload another image after extraction | Added back navigation and re-upload workflow support         |
 | May 2026     | Processing time was high during OCR extraction        | Optimized preprocessing pipeline for faster extraction       |
 | May 2026     | Dashboard workflow felt incomplete                    | Improved dashboard navigation and extraction management flow |
 | May 2026     | OCR struggled with handwritten poultry records        | Integrated hybrid OCR system using EasyOCR + Tesseract OCR   |
