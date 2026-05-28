@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Insights — Poultry Digitizer{% endblock %}
+{% block page_title %}Insights & Trends{% endblock %}
+{% block topbar_right %}
+<a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">← Dashboard</a>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  .trends-intro{font-size:.88rem;color:var(--ink3);margin-bottom:26px;line-height:1.65;}
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:680px){.charts-grid{grid-template-columns:1fr;}}
+
+  .chart-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow);
+    animation:fadeUp .4s ease both;transition:box-shadow .2s;
+  }
+  .chart-card:hover{box-shadow:var(--shadow-md);}
+  .chart-card:nth-child(1){animation-delay:.05s}
+  .chart-card:nth-child(2){animation-delay:.12s}
+  .chart-card:nth-child(3){animation-delay:.19s}
+  .chart-card:nth-child(4){animation-delay:.26s}
+  .chart-card:nth-child(5){animation-delay:.33s}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .chart-card.wide{grid-column:1/-1;}
+
+  .ch-header{margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+  .ch-title{font-size:.86rem;font-weight:700;color:var(--ink);}
+  .ch-sub  {font-size:.72rem;color:var(--ink3);margin-top:2px;}
+  .ch-big  {font-size:1.1rem;font-weight:800;font-family:var(--mono);color:var(--accent);}
+
+  canvas{max-height:240px;}
+
+  .ch-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
+  .cs-item{text-align:center;}
+  .cs-val {font-size:1rem;font-weight:700;font-family:var(--mono);color:var(--ink);}
+  .cs-lbl {font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-top:2px;}
+
+  .no-data{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-lg);padding:48px;text-align:center;color:var(--ink3);}
+  .no-data .nd-icon{font-size:2.5rem;margin-bottom:12px;}
+  .no-data h3{font-size:1rem;font-weight:600;color:var(--ink2);margin-bottom:6px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<p class="trends-intro">Visual analysis of your extracted register data. Charts update automatically with each new upload.</p>
+
+{% set abw = result.abw_values if result.abw_values else [] %}
+{% set fcr = result.fcr_values if result.fcr_values else [] %}
+
+{% if not abw and not fcr %}
+<div class="no-data">
+  <div class="nd-icon">📊</div>
+  <h3>No chart data available</h3>
+  <p>Try uploading a clearer photo of the register sheet for better extraction.</p>
+</div>
+{% else %}
+<div class="charts-grid">
+
+  {% if abw %}
+  <div class="chart-card">
+    <div class="ch-header">
+      <div><div class="ch-title">⚖️ Body Weight Growth</div><div class="ch-sub">Actual Body Weight over weeks (grams)</div></div>
+      <div class="ch-big">{{ abw[-1] }}g</div>
+    </div>
+    <canvas id="abwLine"></canvas>
+    <div class="ch-stats">
+      <div class="cs-item"><div class="cs-val">{{ abw[0] }}</div><div class="cs-lbl">Start (g)</div></div>
+      <div class="cs-item"><div class="cs-val">{{ abw[-1] }}</div><div class="cs-lbl">Latest (g)</div></div>
+      <div class="cs-item"><div class="cs-val">{{ abw[-1] - abw[0] }}</div><div class="cs-lbl">Total Gain</div></div>
+      <div class="cs-item"><div class="cs-val">{{ abw | length }}</div><div class="cs-lbl">Weeks</div></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if fcr %}
+  <div class="chart-card">
+    <div class="ch-header">
+      <div><div class="ch-title">📈 FCR Trend</div><div class="ch-sub">Feed Conversion Ratio over weeks</div></div>
+      <div class="ch-big">{{ fcr[-1] }}</div>
+    </div>
+    <canvas id="fcrLine"></canvas>
+    <div class="ch-stats">
+      <div class="cs-item"><div class="cs-val">{{ fcr | min }}</div><div class="cs-lbl">Best FCR</div></div>
+      <div class="cs-item"><div class="cs-val">{{ fcr | max }}</div><div class="cs-lbl">Worst FCR</div></div>
+      <div class="cs-item"><div class="cs-val">{{ fcr[-1] }}</div><div class="cs-lbl">Latest</div></div>
+      <div class="cs-item"><div class="cs-val">{{ fcr | length }}</div><div class="cs-lbl">Readings</div></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if abw | length > 1 %}
+  <div class="chart-card wide">
+    <div class="ch-header"><div><div class="ch-title">📊 Weekly Weight Gain</div><div class="ch-sub">Grams gained per week — green = gain, red = loss</div></div></div>
+    <canvas id="gainBar" style="max-height:200px"></canvas>
+  </div>
+  {% endif %}
+
+  {% if fcr | length > 1 %}
+  <div class="chart-card">
+    <div class="ch-header"><div><div class="ch-title">🍩 FCR Distribution</div><div class="ch-sub">Breakdown by performance category</div></div></div>
+    <canvas id="fcrDonut"></canvas>
+  </div>
+  {% endif %}
+
+  {% if abw | length > 1 %}
+  <div class="chart-card">
+    <div class="ch-header"><div><div class="ch-title">📉 ABW by Week</div><div class="ch-sub">Body weight reading per checkpoint</div></div></div>
+    <canvas id="abwBar"></canvas>
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const abwData = {{ result.abw_values | tojson }};
+const fcrData = {{ result.fcr_values | tojson }};
+const wkA = abwData.map((_,i) => `Wk ${i+1}`);
+const wkF = fcrData.map((_,i) => `Wk ${i+1}`);
+const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+const gc   = dark ? '#2C3B2C' : '#EEF4EE';
+
+Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+Chart.defaults.font.size   = 11;
+Chart.defaults.color       = dark ? '#6B856B' : '#7A8C79';
+
+const base = {
+  responsive:true,
+  plugins:{legend:{display:false}},
+  scales:{y:{grid:{color:gc},beginAtZero:false},x:{grid:{display:false}}}
+};
+
+const el = id => document.getElementById(id);
+
+if (el('abwLine') && abwData.length)
+  new Chart(el('abwLine'),{type:'line',data:{labels:wkA,datasets:[{data:abwData,borderColor:'#2A6B2A',backgroundColor:'rgba(42,107,42,.07)',borderWidth:2.5,pointBackgroundColor:'#2A6B2A',pointRadius:5,fill:true,tension:.38}]},options:base});
+
+if (el('fcrLine') && fcrData.length)
+  new Chart(el('fcrLine'),{type:'line',data:{labels:wkF,datasets:[{data:fcrData,borderColor:'#1D4ED8',backgroundColor:'rgba(29,78,216,.06)',borderWidth:2.5,pointBackgroundColor:'#1D4ED8',pointRadius:5,fill:true,tension:.38}]},options:base});
+
+if (el('gainBar') && abwData.length > 1) {
+  const gains  = abwData.slice(1).map((v,i)=>v-abwData[i]);
+  const colors = gains.map(g=>g>=0?'rgba(42,107,42,.8)':'rgba(220,38,38,.8)');
+  new Chart(el('gainBar'),{type:'bar',data:{labels:wkA.slice(1),datasets:[{data:gains,backgroundColor:colors,borderRadius:5}]},options:{...base,scales:{y:{grid:{color:gc}},x:{grid:{display:false}}}}});
+}
+
+if (el('fcrDonut') && fcrData.length) {
+  const exc=fcrData.filter(v=>v<0.8).length, gd=fcrData.filter(v=>v>=0.8&&v<1.0).length;
+  const avg=fcrData.filter(v=>v>=1.0&&v<1.2).length, poor=fcrData.filter(v=>v>=1.2).length;
+  const labels=[],data=[],colors=[];
+  if(exc) {labels.push('Excellent');data.push(exc); colors.push('#065F46');}
+  if(gd)  {labels.push('Good');     data.push(gd);  colors.push('#2A6B2A');}
+  if(avg) {labels.push('Average');  data.push(avg);  colors.push('#D97706');}
+  if(poor){labels.push('Poor');     data.push(poor); colors.push('#DC2626');}
+  new Chart(el('fcrDonut'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:dark?'#1A211A':'#fff'}]},options:{responsive:true,plugins:{legend:{display:true,position:'bottom',labels:{padding:14,font:{size:11}}}},cutout:'60%'}});
+}
+
+if (el('abwBar') && abwData.length > 1)
+  new Chart(el('abwBar'),{type:'bar',data:{labels:wkA,datasets:[{data:abwData,backgroundColor:'rgba(42,107,42,.75)',borderRadius:5}]},options:base});
+</script>
+{% endblock %}

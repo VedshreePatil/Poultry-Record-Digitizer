@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Settings — Poultry Digitizer{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block extra_head %}
+<style>
+  .settings-list { display: flex; flex-direction: column; gap: 14px; max-width: 640px; }
+
+  .setting-row {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: 20px 22px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; box-shadow: var(--shadow);
+  }
+  .sr-left h4 { font-size: .95rem; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .sr-left p  { font-size: .8rem; color: var(--ink3); line-height: 1.5; }
+
+  /* Toggle */
+  .toggle { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; cursor: pointer;
+    background: var(--border2); border-radius: 26px;
+    transition: background .22s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute;
+    width: 20px; height: 20px; left: 3px; bottom: 3px;
+    background: #fff; border-radius: 50%;
+    transition: transform .22s;
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  }
+  input:checked + .toggle-slider { background: var(--accent); }
+  input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+  /* Language select */
+  .lang-select {
+    padding: 9px 14px;
+    border: 1.5px solid var(--border2);
+    border-radius: var(--r);
+    font-family: var(--font); font-size: .88rem;
+    color: var(--ink); background: var(--surface2);
+    outline: none; cursor: pointer;
+    transition: border-color .17s;
+    min-width: 140px;
+  }
+  .lang-select:focus { border-color: var(--accent); }
+
+  /* Language applied label */
+  .lang-applied {
+    display: none;
+    background: var(--accent-lt); color: var(--accent);
+    border-radius: 12px; padding: 3px 11px;
+    font-size: .75rem; font-weight: 600;
+    margin-left: 10px;
+  }
+  .lang-applied.show { display: inline-block; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="settings-list">
+
+  <!-- Dark / Light mode -->
+  <div class="setting-row">
+    <div class="sr-left">
+      <h4>🌙 Dark Mode</h4>
+      <p>Switch between light and dark interface themes</p>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="darkToggle" onchange="applyTheme(this.checked)"/>
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+
+  <!-- Language -->
+  <div class="setting-row">
+    <div class="sr-left">
+      <h4>🌐 Language <span class="lang-applied" id="langApplied">Applied ✓</span></h4>
+      <p>Select your preferred display language</p>
+    </div>
+    <select class="lang-select" id="langSelect" onchange="applyLanguage(this.value)">
+      <option value="en">English</option>
+      <option value="hi">Hindi</option>
+      <option value="mr">Marathi</option>
+    </select>
+  </div>
+
+</div>
+
+<!-- Language text map — used by applyLanguage() -->
+<script>
+const LANG = {
+  en: { dashboard:"Dashboard", downloads:"Downloads", profile:"Profile", settings:"Settings", help:"Help & About", logout:"Logout" },
+  hi: { dashboard:"डैशबोर्ड",  downloads:"डाउनलोड",  profile:"प्रोफ़ाइल", settings:"सेटिंग्स", help:"सहायता",    logout:"लॉग आउट" },
+  mr: { dashboard:"डॅशबोर्ड",  downloads:"डाउनलोड",  profile:"प्रोफाइल",  settings:"सेटिंग्ज", help:"मदत",       logout:"लॉग आउट" },
+};
+
+function applyLanguage(lang) {
+  localStorage.setItem('lang', lang);
+  const dict = LANG[lang] || LANG['en'];
+
+  // Update all sidebar links that have data-key attributes
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const k = el.getAttribute('data-key');
+    if (dict[k]) el.textContent = dict[k];
+  });
+
+  // Show "Applied" badge briefly
+  const badge = document.getElementById('langApplied');
+  if (badge) {
+    badge.classList.add('show');
+    setTimeout(() => badge.classList.remove('show'), 2000);
+  }
+}
+
+function applyTheme(isDark) {
+  const t = isDark ? 'dark' : 'light';
+  localStorage.setItem('theme', t);
+  document.documentElement.setAttribute('data-theme', t);
+}
+
+// Restore saved settings on load
+(function () {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.getElementById('darkToggle').checked = savedTheme === 'dark';
+
+  const savedLang = localStorage.getItem('lang') || 'en';
+  document.getElementById('langSelect').value = savedLang;
+  if (savedLang !== 'en') applyLanguage(savedLang);
+})();
+</script>
+
+{% endblock %}

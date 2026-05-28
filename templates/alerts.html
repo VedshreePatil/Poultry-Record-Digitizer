@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Alerts — Poultry Digitizer{% endblock %}
+{% block page_title %}Alerts{% endblock %}
+{% block topbar_right %}
+<a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">← Dashboard</a>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .alerts-intro{font-size:.88rem;color:var(--ink3);margin-bottom:22px;line-height:1.65;}
+
+  .alert-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;}
+  .sum-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:.78rem;font-weight:700;}
+  .sp-danger {background:var(--red-lt);  color:var(--red);}
+  .sp-warning{background:var(--amber-lt);color:var(--amber);}
+  .sp-info   {background:var(--blue-lt); color:var(--blue);}
+
+  .alert-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r-lg);padding:20px 22px;
+    margin-bottom:12px;display:flex;align-items:flex-start;gap:16px;
+    box-shadow:var(--shadow);animation:fadeUp .3s ease both;
+    transition:box-shadow .2s;
+  }
+  .alert-card:hover{box-shadow:var(--shadow-md);}
+  .alert-card:nth-child(1){animation-delay:.04s}
+  .alert-card:nth-child(2){animation-delay:.09s}
+  .alert-card:nth-child(3){animation-delay:.14s}
+  .alert-card:nth-child(4){animation-delay:.19s}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .lv-danger {border-left:4px solid var(--red);}
+  .lv-warning{border-left:4px solid var(--amber);}
+  .lv-info   {border-left:4px solid var(--blue);}
+
+  .alert-icon-box{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;}
+  .lv-danger  .alert-icon-box{background:var(--red-lt);}
+  .lv-warning .alert-icon-box{background:var(--amber-lt);}
+  .lv-info    .alert-icon-box{background:var(--blue-lt);}
+
+  .alert-body{flex:1;}
+  .alert-title{font-size:.95rem;font-weight:700;margin-bottom:5px;}
+  .lv-danger  .alert-title{color:var(--red);}
+  .lv-warning .alert-title{color:var(--amber);}
+  .lv-info    .alert-title{color:var(--blue);}
+  .alert-detail{font-size:.84rem;color:var(--ink3);line-height:1.6;}
+
+  .lv-badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;flex-shrink:0;align-self:flex-start;margin-top:2px;}
+  .lv-danger  .lv-badge{background:var(--red-lt);  color:var(--red);}
+  .lv-warning .lv-badge{background:var(--amber-lt);color:var(--amber);}
+  .lv-info    .lv-badge{background:var(--blue-lt); color:var(--blue);}
+
+  .all-clear{
+    background:var(--accent-lt);border:1px solid #86EFAC;
+    border-radius:var(--r-lg);padding:48px 28px;text-align:center;
+    box-shadow:var(--shadow);animation:fadeUp .35s ease;
+  }
+  .all-clear .ac-icon{font-size:2.8rem;margin-bottom:12px;}
+  .all-clear h3{font-size:1.05rem;font-weight:700;color:var(--accent);margin-bottom:6px;}
+  .all-clear p {font-size:.86rem;color:var(--ink3);}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<p class="alerts-intro">
+  Automatic anomaly detection based on your extracted register data.
+  Readings are compared against standard poultry growth benchmarks.
+</p>
+
+{% if alerts and alerts | length > 0 %}
+
+<div class="alert-summary">
+  {% set dc = alerts | selectattr('level','equalto','danger')  | list | length %}
+  {% set wc = alerts | selectattr('level','equalto','warning') | list | length %}
+  {% set ic = alerts | selectattr('level','equalto','info')    | list | length %}
+  {% if dc > 0 %}<span class="sum-pill sp-danger">🚨 {{ dc }} Critical</span>{% endif %}
+  {% if wc > 0 %}<span class="sum-pill sp-warning">⚠️ {{ wc }} Warning{{ 's' if wc > 1 }}</span>{% endif %}
+  {% if ic > 0 %}<span class="sum-pill sp-info">ℹ️ {{ ic }} Info</span>{% endif %}
+</div>
+
+{% for alert in alerts %}
+<div class="alert-card lv-{{ alert.level }}">
+  <div class="alert-icon-box">{{ alert.icon }}</div>
+  <div class="alert-body">
+    <div class="alert-title">{{ alert.title }}</div>
+    <div class="alert-detail">{{ alert.detail }}</div>
+  </div>
+  <span class="lv-badge">{{ alert.level }}</span>
+</div>
+{% endfor %}
+
+{% else %}
+
+<div class="all-clear">
+  <div class="ac-icon">✅</div>
+  <h3>No Alerts Detected</h3>
+  <p>All readings appear within normal range. Flock looks healthy.</p>
+</div>
+
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Poultry Digitizer{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block topbar_right %}
+  {% if result %}
+  <button class="btn btn-ghost btn-sm" onclick="location.href='/dashboard?reset=1'">📤 New Upload</button>
+  {% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .upload-section{max-width:620px;margin:0 auto;}
+  .upload-hero{text-align:center;margin-bottom:32px;}
+  .upload-hero h2{font-size:1.7rem;font-weight:800;color:var(--ink);margin-bottom:8px;}
+  .upload-hero p{font-size:.9rem;color:var(--ink3);line-height:1.65;}
+
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+  @media(max-width:480px){.upload-grid{grid-template-columns:1fr;}}
+
+  .upload-opt{border:2px dashed var(--border2);border-radius:var(--r-lg);padding:32px 18px;text-align:center;cursor:pointer;position:relative;transition:all .2s;background:var(--surface);}
+  .upload-opt:hover{border-color:var(--accent);background:var(--accent-lt);transform:translateY(-2px);}
+  .upload-opt.selected{border-color:var(--accent);border-style:solid;background:var(--accent-lt);}
+  .upload-opt input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .opt-icon {font-size:2.2rem;margin-bottom:10px;display:block;}
+  .opt-title{font-size:.9rem;font-weight:700;color:var(--ink);margin-bottom:4px;}
+  .opt-sub  {font-size:.75rem;color:var(--ink3);line-height:1.4;}
+
+  .file-chip{display:none;align-items:center;gap:10px;background:var(--accent-lt);border:1px solid #86EFAC;border-radius:30px;padding:8px 16px;font-size:.83rem;color:var(--accent);font-weight:600;margin-bottom:16px;}
+  .file-chip.show{display:flex;}
+  .file-chip .xbtn{margin-left:auto;cursor:pointer;color:var(--ink3);}
+  .file-chip .xbtn:hover{color:var(--red);}
+
+  /* Processing box */
+  .proc-box{display:none;flex-direction:column;align-items:center;padding:48px 24px;text-align:center;background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);}
+  .proc-box.show{display:flex;}
+  .spin-ring{width:52px;height:52px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite;margin-bottom:18px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .proc-title{font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:6px;}
+  .proc-sub  {font-size:.83rem;color:var(--ink3);}
+  .proc-steps{margin-top:20px;display:flex;flex-direction:column;gap:8px;width:100%;max-width:280px;}
+  .proc-step {display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--ink3);}
+  .proc-step .dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;}
+  .proc-step.done .dot{background:var(--accent);}
+  .proc-step.active .dot{background:var(--accent);animation:pulse .8s ease infinite;}
+  .proc-step.active{color:var(--ink);font-weight:500;}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+
+  /* Quality warning */
+  .qwarn{background:var(--amber-lt);border:1px solid #FCD34D;border-left:4px solid var(--amber);border-radius:var(--r);padding:12px 16px;font-size:.86rem;color:#92400E;margin-bottom:18px;display:flex;gap:10px;}
+
+  /* Result section */
+  .result-section{animation:fadeUp .4s ease;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .result-hero{
+    background:linear-gradient(135deg,var(--accent) 0%,#1A4A1A 100%);
+    border-radius:var(--r-lg);padding:28px;margin-bottom:22px;
+    color:#fff;display:flex;align-items:center;
+    justify-content:space-between;flex-wrap:wrap;gap:16px;
+  }
+  .rh-left h2{font-size:1.2rem;font-weight:800;margin-bottom:4px;}
+  .rh-left p {font-size:.82rem;opacity:.75;}
+  .rh-stats{display:flex;gap:22px;flex-wrap:wrap;}
+  .rh-stat{text-align:center;}
+  .rh-stat .rv{font-size:1.6rem;font-weight:800;font-family:var(--mono);}
+  .rh-stat .rl{font-size:.68rem;opacity:.7;text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+
+  /* Nav cards */
+  .nav-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;}
+  .nav-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r-lg);padding:24px 20px;
+    text-decoration:none;display:flex;flex-direction:column;gap:12px;
+    box-shadow:var(--shadow);transition:all .2s;
+    position:relative;overflow:hidden;
+    animation:fadeUp .45s ease both;
+  }
+  .nav-card:nth-child(1){animation-delay:.05s}
+  .nav-card:nth-child(2){animation-delay:.12s}
+  .nav-card:nth-child(3){animation-delay:.19s}
+  .nav-card::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:var(--border);transition:background .2s;}
+  .nav-card:hover{box-shadow:var(--shadow-md);transform:translateY(-3px);}
+  .nc-report:hover::after{background:var(--accent);}
+  .nc-alerts:hover::after{background:var(--amber);}
+  .nc-trends:hover::after{background:var(--blue);}
+
+  .nc-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;}
+  .ni-g{background:var(--accent-lt);}
+  .ni-a{background:var(--amber-lt);}
+  .ni-b{background:var(--blue-lt);}
+  .nc-title{font-size:.98rem;font-weight:700;color:var(--ink);}
+  .nc-sub  {font-size:.8rem;color:var(--ink3);line-height:1.5;}
+  .nc-arrow{margin-top:auto;font-size:.8rem;font-weight:700;display:flex;align-items:center;gap:4px;transition:gap .18s;}
+  .nc-report .nc-arrow{color:var(--accent);}
+  .nc-alerts .nc-arrow{color:var(--amber);}
+  .nc-trends .nc-arrow{color:var(--blue);}
+  .nav-card:hover .nc-arrow{gap:10px;}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% set has_data = result and (result.get('latest_abw') is not none or result.get('fcr_values')) %}
+
+{% if has_data %}
+{# ── Results view ──────────────────────────────── #}
+
+{% if quality_warn %}
+<div class="qwarn"><span>⚠️</span><span>{{ quality_warn }}</span></div>
+{% endif %}
+
+<div class="result-section">
+  <div class="result-hero">
+    <div class="rh-left">
+      <h2>Extraction Complete ✓</h2>
+      <p>OCR Engine: {{ result.ocr_engine }} · Processed in {{ result.elapsed or '—' }}s</p>
+    </div>
+    <div class="rh-stats">
+      <div class="rh-stat">
+        <div class="rv">{{ result.latest_abw if result.latest_abw is not none else '—' }}</div>
+        <div class="rl">Latest ABW (g)</div>
+      </div>
+      <div class="rh-stat">
+        <div class="rv">{{ result.latest_fcr if result.latest_fcr is not none else '—' }}</div>
+        <div class="rl">Latest FCR</div>
+      </div>
+      <div class="rh-stat">
+        <div class="rv">{{ result.abw_values | length }}</div>
+        <div class="rl">ABW Readings</div>
+      </div>
+      <div class="rh-stat">
+        <div class="rv">{{ result.fcr_values | length }}</div>
+        <div class="rl">FCR Readings</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">What would you like to do?</div>
+  <div class="nav-cards">
+    <a href="{{ url_for('report') }}" class="nav-card nc-report">
+      <div class="nc-icon ni-g">📋</div>
+      <div><div class="nc-title">View Full Report</div><div class="nc-sub">Structured data table with editable values. Download as Excel or PDF.</div></div>
+      <div class="nc-arrow">Open Report →</div>
+    </a>
+    <a href="{{ url_for('alerts') }}" class="nav-card nc-alerts">
+      <div class="nc-icon ni-a">🔔</div>
+      <div><div class="nc-title">View Alerts</div><div class="nc-sub">Automatic anomaly detection — weight drops, FCR issues, health warnings.</div></div>
+      <div class="nc-arrow">View Alerts →</div>
+    </a>
+    <a href="{{ url_for('trends') }}" class="nav-card nc-trends">
+      <div class="nc-icon ni-b">📈</div>
+      <div><div class="nc-title">View Insights</div><div class="nc-sub">Charts for ABW growth, FCR trends, weekly gains and performance.</div></div>
+      <div class="nc-arrow">View Charts →</div>
+    </a>
+  </div>
+</div>
+
+{% else %}
+{# ── Upload view ───────────────────────────────── #}
+
+<div class="upload-section">
+  <div class="upload-hero">
+    <h2>Upload a Register Image</h2>
+    <p>Take a photo of your poultry record sheet or upload from gallery. We'll extract ABW, FCR and medicine data automatically.</p>
+  </div>
+
+  <div id="uploadArea">
+    <div class="upload-grid">
+      <div class="upload-opt" id="galleryBox">
+        <input type="file" id="galleryInput" accept="image/*" onchange="onPick(this,'gallery')"/>
+        <span class="opt-icon">🖼️</span>
+        <div class="opt-title">Upload from Gallery</div>
+        <div class="opt-sub">JPG, PNG, TIFF, WEBP, BMP</div>
+      </div>
+      <div class="upload-opt" id="cameraBox">
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="onPick(this,'camera')"/>
+        <span class="opt-icon">📷</span>
+        <div class="opt-title">Capture with Camera</div>
+        <div class="opt-sub">Use your device camera directly</div>
+      </div>
+    </div>
+
+    <div class="file-chip" id="fileChip">
+      <span>📎</span>
+      <span id="chipName"></span>
+      <span class="xbtn" onclick="clearPick()">✕</span>
+    </div>
+
+    <button class="btn btn-primary btn-lg btn-block"
+            id="processBtn" disabled onclick="startProcess()">
+      ⚙️ Extract &amp; Analyse
+    </button>
+  </div>
+
+  <div class="proc-box" id="procBox">
+    <div class="spin-ring"></div>
+    <div class="proc-title">Processing your image…</div>
+    <div class="proc-sub">This usually takes 15–30 seconds</div>
+    <div class="proc-steps">
+      <div class="proc-step active" id="s1"><div class="dot"></div>Compressing &amp; preprocessing image</div>
+      <div class="proc-step" id="s2"><div class="dot"></div>Running OCR engines</div>
+      <div class="proc-step" id="s3"><div class="dot"></div>Extracting structured data</div>
+      <div class="proc-step" id="s4"><div class="dot"></div>Finalising results</div>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let activeFile = null;
+
+function onPick(input, src) {
+  if (!input.files || !input.files[0]) return;
+  activeFile = input.files[0];
+  document.getElementById('galleryBox').classList.remove('selected');
+  document.getElementById('cameraBox').classList.remove('selected');
+  document.getElementById(src==='gallery'?'galleryBox':'cameraBox').classList.add('selected');
+  document.getElementById('chipName').textContent = input.files[0].name;
+  document.getElementById('fileChip').classList.add('show');
+  document.getElementById('processBtn').disabled = false;
+}
+
+function clearPick() {
+  document.getElementById('galleryInput').value = '';
+  document.getElementById('cameraInput').value  = '';
+  document.getElementById('galleryBox').classList.remove('selected');
+  document.getElementById('cameraBox').classList.remove('selected');
+  document.getElementById('fileChip').classList.remove('show');
+  document.getElementById('processBtn').disabled = true;
+  activeFile = null;
+}
+
+async function startProcess() {
+  if (!activeFile) return;
+  document.getElementById('uploadArea').style.display = 'none';
+  document.getElementById('procBox').classList.add('show');
+
+  const steps = ['s1','s2','s3','s4'];
+  let si = 0;
+  const iv = setInterval(() => {
+    if (si > 0) {
+      document.getElementById(steps[si-1]).classList.remove('active');
+      document.getElementById(steps[si-1]).classList.add('done');
+    }
+    if (si < steps.length) {
+      document.getElementById(steps[si]).classList.add('active');
+      si++;
+    }
+  }, 5000);
+
+  const fd = new FormData();
+  fd.append('image', activeFile);
+
+  try {
+    const resp = await fetch('/process', { method:'POST', body:fd });
+    const data = await resp.json();
+    clearInterval(iv);
+    if (data.ok) {
+      window.location.reload();
+    } else {
+      showErr(data.error || 'Processing failed. Please try again.');
+    }
+  } catch(e) {
+    clearInterval(iv);
+    showErr('Network error — please try again.');
+  }
+}
+
+function showErr(msg) {
+  document.getElementById('procBox').classList.remove('show');
+  document.getElementById('uploadArea').style.display = '';
+  showToast('❌ ' + msg, 5000);
+}
+</script>
+{% endblock %}

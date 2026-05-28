@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% block title %}Report — Poultry Digitizer{% endblock %}
+{% block page_title %}Full Report{% endblock %}
+{% block topbar_right %}
+<a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">← Dashboard</a>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Download banner */
+  .dl-banner {
+    background: linear-gradient(135deg, var(--accent) 0%, #1A4A1A 100%);
+    border-radius: var(--r-lg); padding: 22px 26px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 14px; margin-bottom: 24px; color: #fff;
+  }
+  .dl-banner h3 { font-size: 1rem; font-weight: 700; margin-bottom: 3px; }
+  .dl-banner p  { font-size: .8rem; opacity: .75; }
+  .dl-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-dl-xl  { background: rgba(255,255,255,.15); color: #fff; border: 1.5px solid rgba(255,255,255,.4); }
+  .btn-dl-xl:hover  { background: rgba(255,255,255,.25); }
+  .btn-dl-pdf { background: #E07B00; color: #fff; border: none; }
+  .btn-dl-pdf:hover { background: #C56D00; }
+
+  /* Summary */
+  .summary-bar {
+    background: var(--accent-lt); border: 1px solid #86EFAC;
+    border-radius: var(--r); padding: 11px 16px;
+    font-family: var(--mono); font-size: .87rem; color: var(--accent);
+    margin-bottom: 22px; word-break: break-all;
+  }
+
+  .chip { background: var(--accent-lt); color: var(--accent); border-radius: 20px; padding: 2px 10px; font-size: .7rem; font-weight: 700; }
+
+  /* Table */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+  thead th { background: var(--ink); color: #fff; padding: 11px 14px; text-align: left; font-weight: 500; font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:nth-child(even) { background: var(--surface2); }
+  tbody tr:hover { background: var(--accent-lt); }
+  td { padding: 10px 14px; color: var(--ink); vertical-align: middle; }
+
+  /* Editable */
+  .editable {
+    border: 1.5px solid transparent; border-radius: 5px;
+    padding: 4px 8px; font-family: var(--mono); font-size: .86rem;
+    font-weight: 600; color: var(--accent); background: transparent;
+    width: 90px; outline: none; transition: all .17s;
+  }
+  .editable:focus { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px rgba(42,107,42,.12); }
+  .editable.changed { border-color: var(--amber); background: var(--amber-lt); }
+
+  .rating { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: .73rem; font-weight: 700; }
+  .r-exc  { background: #D1FAE5; color: #065F46; }
+  .r-good { background: var(--accent-lt); color: var(--accent); }
+  .r-avg  { background: var(--amber-lt); color: var(--amber); }
+  .r-poor { background: var(--red-lt); color: var(--red); }
+
+  .chg-pos { color: var(--accent); font-family: var(--mono); font-weight: 600; }
+  .chg-neg { color: var(--red); font-family: var(--mono); font-weight: 600; }
+
+  .prog { display: flex; align-items: center; gap: 8px; }
+  .prog-bar { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; min-width: 50px; }
+  .prog-fill { height: 100%; border-radius: 3px; }
+  .prog-pct  { font-size: .7rem; color: var(--ink3); min-width: 34px; }
+
+  .save-bar { background: var(--amber-lt); border: 1px solid #FCD34D; border-radius: var(--r); padding: 12px 18px; display: none; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+  .save-bar.show { display: flex; }
+  .save-bar p { font-size: .84rem; color: #92400E; }
+
+  .note-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px 14px; border-radius: var(--r); margin-bottom: 8px; background: var(--amber-lt); border-left: 3px solid #FCD34D; font-size: .86rem; }
+  .note-num  { background: var(--accent); color: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+  details { margin-bottom: 10px; }
+  details summary { cursor: pointer; color: var(--ink3); font-size: .82rem; padding: 6px 0; user-select: none; }
+  details summary:hover { color: var(--accent); }
+  .debug-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; font-family: var(--mono); font-size: .76rem; white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow-y: auto; margin-top: 6px; color: var(--ink3); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Download banner -->
+<div class="dl-banner">
+  <div>
+    <h3>💾 Export Your Data</h3>
+    <p>Enter a file name when prompted, then your file downloads automatically</p>
+  </div>
+  <div class="dl-btns">
+    <button class="btn btn-dl-xl" onclick="openModal('excel')">📗 Download Excel</button>
+    <button class="btn btn-dl-pdf" onclick="openModal('pdf')">📕 Download PDF</button>
+  </div>
+</div>
+
+<div class="summary-bar">{{ result.formatted }}</div>
+
+<!-- ABW table -->
+{% if result.abw_values %}
+<div class="card">
+  <div class="card-hd">
+    <div class="card-hd-title">⚖️ ABW Readings <span class="chip">{{ result.abw_values|length }}</span></div>
+    <span style="font-size:.75rem;color:var(--ink3)">Click any value to edit</span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>#</th><th>ABW (gms)</th><th>Est. Week</th><th>Change</th><th>% Change</th><th>Trend</th></tr></thead>
+      <tbody>
+        {% for val in result.abw_values %}
+        {% set i = loop.index0 %}
+        {% set prev = result.abw_values[i-1] if i > 0 else none %}
+        {% set change = (val - prev) if prev is not none else none %}
+        {% set pct = ((change / prev * 100)|round(1)) if (change is not none and prev and prev > 0) else none %}
+        <tr>
+          <td style="color:var(--ink3)">{{ loop.index }}</td>
+          <td><input class="editable" type="number" data-field="abw_values" data-index="{{ i }}" value="{{ val }}" onchange="markChanged(this)" oninput="markChanged(this)"/></td>
+          <td style="color:var(--ink3)">~Week {{ loop.index }}</td>
+          <td class="{{ 'chg-pos' if change is not none and change >= 0 else 'chg-neg' }}">
+            {% if change is not none %}{{ '+' if change >= 0 else '' }}{{ change }} gms{% else %}—{% endif %}
+          </td>
+          <td style="color:var(--ink3)">{% if pct is not none %}{{ pct }}%{% else %}—{% endif %}</td>
+          <td>
+            {% if pct is not none %}
+            <div class="prog">
+              <div class="prog-bar"><div class="prog-fill" style="width:{{ [pct|abs,100]|min }}%;background:{{ '#2A6B2A' if change >= 0 else '#DC2626' }}"></div></div>
+              <span class="prog-pct">{{ pct }}%</span>
+            </div>
+            {% else %}<span style="color:var(--border2)">first</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="save-bar" id="save-abw" style="padding:12px 18px">
+    <p>✏️ You have unsaved ABW edits</p>
+    <button class="btn btn-primary btn-sm" onclick="saveEdits()">💾 Save Changes</button>
+  </div>
+</div>
+{% endif %}
+
+<!-- FCR table -->
+{% if result.fcr_values %}
+<div class="card">
+  <div class="card-hd">
+    <div class="card-hd-title">📈 FCR Readings <span class="chip">{{ result.fcr_values|length }}</span></div>
+    <span style="font-size:.75rem;color:var(--ink3)">Click any value to edit</span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>#</th><th>FCR Value</th><th>Rating</th><th>Interpretation</th></tr></thead>
+      <tbody>
+        {% for val in result.fcr_values %}
+        <tr>
+          <td style="color:var(--ink3)">{{ loop.index }}</td>
+          <td><input class="editable" type="number" step="0.01" data-field="fcr_values" data-index="{{ loop.index0 }}" value="{{ val }}" onchange="markChanged(this)" oninput="markChanged(this)"/></td>
+          <td>
+            {% if val < 0.8 %}<span class="rating r-exc">Excellent</span>
+            {% elif val < 1.0 %}<span class="rating r-good">Good</span>
+            {% elif val < 1.2 %}<span class="rating r-avg">Average</span>
+            {% else %}<span class="rating r-poor">Poor</span>{% endif %}
+          </td>
+          <td style="color:var(--ink3);font-size:.82rem">
+            {% if val < 0.8 %}Very efficient feed conversion
+            {% elif val < 1.0 %}Normal growth pattern
+            {% elif val < 1.2 %}Feed efficiency declining
+            {% else %}High feed vs weight gain{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="save-bar" id="save-fcr" style="padding:12px 18px">
+    <p>✏️ You have unsaved FCR edits</p>
+    <button class="btn btn-primary btn-sm" onclick="saveEdits()">💾 Save Changes</button>
+  </div>
+</div>
+{% endif %}
+
+{% if result.medicine_notes %}
+<div class="card">
+  <div class="card-hd"><div class="card-hd-title">💊 Medicine / Vaccine Notes</div></div>
+  <div class="card-body">
+    {% for note in result.medicine_notes %}
+    <div class="note-item"><div class="note-num">{{ loop.index }}</div><div>{{ note }}</div></div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-hd"><div class="card-hd-title">🔧 Raw OCR Debug</div></div>
+  <div class="card-body">
+    <details><summary>Cleaned OCR Text</summary><div class="debug-box">{{ result.cleaned_text }}</div></details>
+    <details><summary>Raw OCR Text</summary><div class="debug-box">{{ result.raw_text }}</div></details>
+  </div>
+</div>
+
+<!-- ── Filename Modal ────────────────────────────────────── -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <h3 id="modalTitle">💾 Name Your File</h3>
+    <p>Enter a name for the file (no extension needed)</p>
+    <input class="modal-input" type="text" id="exportFilename"
+           placeholder="e.g. batch_1_week_5" value="poultry_record"
+           onkeydown="if(event.key==='Enter') doExport()"/>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="doExport()">⬇ Download</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ── Editable table ───────────────────────────────────── */
+const editedData = {};
+
+function markChanged(input) {
+  input.classList.add('changed');
+  const field = input.dataset.field;
+  if (!editedData[field]) editedData[field] = {};
+  editedData[field][parseInt(input.dataset.index)] = parseFloat(input.value);
+  if (field === 'abw_values') document.getElementById('save-abw').classList.add('show');
+  if (field === 'fcr_values') document.getElementById('save-fcr').classList.add('show');
+}
+
+async function saveEdits() {
+  const patch = {};
+  for (const field of Object.keys(editedData)) {
+    const inputs = document.querySelectorAll(`[data-field="${field}"]`);
+    patch[field] = Array.from(inputs).map(i => parseFloat(i.value));
+  }
+  const resp = await fetch('/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  if (resp.ok) {
+    document.querySelectorAll('.editable.changed').forEach(e => e.classList.remove('changed'));
+    document.querySelectorAll('.save-bar').forEach(e => e.classList.remove('show'));
+    showToast('✅ Changes saved');
+  } else {
+    showToast('❌ Save failed — try again');
+  }
+}
+
+/* ── Export modal ─────────────────────────────────────── */
+let exportFmt = null;
+
+function openModal(fmt) {
+  exportFmt = fmt;
+  document.getElementById('modalTitle').textContent =
+    fmt === 'excel' ? '📗 Name Your Excel File' : '📕 Name Your PDF File';
+  document.getElementById('exportModal').classList.add('open');
+  setTimeout(function() {
+    var inp = document.getElementById('exportFilename');
+    inp.select();
+    inp.focus();
+  }, 120);
+}
+
+function closeModal() {
+  document.getElementById('exportModal').classList.remove('open');
+  /* Do NOT reset exportFmt here — doExport() needs it */
+}
+
+function doExport() {
+  /* Step 1: capture values BEFORE closing modal */
+  var fmt   = exportFmt;
+  var inp   = document.getElementById('exportFilename');
+  var fname = inp ? inp.value.trim() : '';
+  if (!fname) fname = 'poultry_record';
+
+  /* Step 2: validate */
+  if (!fmt) {
+    alert('Export type is missing. Please click Download Excel or Download PDF again.');
+    return;
+  }
+
+  /* Step 3: close modal visually */
+  closeModal();
+
+  /* Step 4: reset global only after capture */
+  exportFmt = null;
+
+  /* Step 5: navigate to download URL */
+  var ext = (fmt === 'excel') ? 'xlsx' : 'pdf';
+  var url = '/export/' + fmt + '?filename=' + encodeURIComponent(fname);
+  window.location.href = url;
+
+  showToast('Downloading ' + fname + '.' + ext + '...');
+}
+</script>
+{% endblock %}

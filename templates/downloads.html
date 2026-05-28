@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Downloads — Poultry Digitizer{% endblock %}
+{% block page_title %}Downloads{% endblock %}
+
+{% block extra_head %}
+<style>
+  .dl-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:22px;}
+  .dl-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 16px;text-align:center;box-shadow:var(--shadow);}
+  .dl-stat .dv{font-size:1.8rem;font-weight:800;font-family:var(--mono);color:var(--accent);}
+  .dl-stat .dl{font-size:.7rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;}
+
+  .search-bar{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;margin-bottom:20px;box-shadow:var(--shadow);}
+  .search-bar input{flex:1;border:none;outline:none;font-family:var(--font);font-size:.9rem;color:var(--ink);background:transparent;}
+  .search-bar input::placeholder{color:var(--ink3);}
+
+  table{width:100%;border-collapse:collapse;font-size:.86rem;}
+  thead th{background:var(--ink);color:#fff;padding:11px 14px;text-align:left;font-weight:500;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:nth-child(even){background:var(--surface2);}
+  tbody tr:hover{background:var(--accent-lt);}
+  td{padding:11px 14px;color:var(--ink);}
+  td.fname{font-weight:600;font-family:var(--mono);font-size:.83rem;}
+
+  .fmt-badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:.7rem;font-weight:700;}
+  .fmt-excel{background:#D1FAE5;color:#065F46;}
+  .fmt-pdf  {background:#FFF7ED;color:#9A3412;}
+
+  .no-res{text-align:center;padding:24px;color:var(--ink3);font-size:.88rem;display:none;}
+  .no-res.show{display:block;}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="dl-stats">
+  <div class="dl-stat">
+    <div class="dv">{{ history | length }}</div>
+    <div class="dl">Total Downloads</div>
+  </div>
+  <div class="dl-stat">
+    <div class="dv">{{ history | selectattr('fmt','equalto','Excel') | list | length }}</div>
+    <div class="dl">Excel Files</div>
+  </div>
+  <div class="dl-stat">
+    <div class="dv">{{ history | selectattr('fmt','equalto','PDF') | list | length }}</div>
+    <div class="dl">PDF Files</div>
+  </div>
+</div>
+
+<div class="search-bar">
+  <span>🔍</span>
+  <input type="text" id="searchInput" placeholder="Search by file name…" oninput="filterRows()"/>
+</div>
+
+{% if history %}
+<div class="card" style="overflow:hidden">
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr><th>#</th><th>File Name</th><th>Format</th><th>Date</th><th>Time</th><th>Size</th></tr>
+      </thead>
+      <tbody id="histBody">
+        {% for item in history %}
+        <tr class="hist-row" data-name="{{ item.name | lower }}">
+          <td style="color:var(--ink3)">{{ loop.index }}</td>
+          <td class="fname">📄 {{ item.name }}</td>
+          <td><span class="fmt-badge {{ 'fmt-excel' if item.fmt == 'Excel' else 'fmt-pdf' }}">{{ item.fmt }}</span></td>
+          <td style="color:var(--ink3)">{{ item.date }}</td>
+          <td style="color:var(--ink3)">{{ item.time }}</td>
+          <td style="color:var(--ink3);font-family:var(--mono);font-size:.82rem">{{ item.size }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="no-res" id="noRes">No files match your search.</div>
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div class="es-icon">📭</div>
+  <h3>No downloads yet</h3>
+  <p>Go to the <a href="{{ url_for('report') }}" style="color:var(--accent);font-weight:600">Report page</a> to export your data as Excel or PDF.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterRows() {
+  const q   = document.getElementById('searchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('.hist-row');
+  let vis = 0;
+  rows.forEach(r => {
+    const show = r.dataset.name.includes(q);
+    r.style.display = show ? '' : 'none';
+    if (show) vis++;
+  });
+  const nr = document.getElementById('noRes');
+  if (nr) nr.classList.toggle('show', vis === 0);
+}
+</script>
+{% endblock %}

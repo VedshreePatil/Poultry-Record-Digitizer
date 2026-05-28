@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Help — Poultry Digitizer{% endblock %}
+{% block page_title %}Help & About{% endblock %}
+
+{% block extra_head %}
+<style>
+  .about-hero {
+    background: linear-gradient(135deg, var(--accent) 0%, #1A4A1A 100%);
+    border-radius: var(--r-lg); padding: 28px;
+    display: flex; align-items: center; gap: 18px;
+    flex-wrap: wrap; margin-bottom: 22px; color: #fff;
+    box-shadow: var(--shadow-md);
+  }
+  .about-hero .ah-icon { font-size: 2.5rem; }
+  .about-hero h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 5px; }
+  .about-hero p  { font-size: .85rem; opacity: .75; line-height: 1.65; max-width: 520px; }
+
+  .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media(max-width:640px) { .help-grid { grid-template-columns: 1fr; } }
+
+  .help-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  .help-card h3 {
+    font-size: .9rem; font-weight: 700; color: var(--ink);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+
+  /* Numbered steps */
+  .step { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
+  .step:last-child { margin-bottom: 0; }
+  .step-num {
+    width: 28px; height: 28px; background: var(--accent); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: .77rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+  }
+  .step-body h4 { font-size: .88rem; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+  .step-body p  { font-size: .82rem; color: var(--ink3); line-height: 1.6; }
+
+  /* Tips list */
+  .tip-list { list-style: none; padding: 0; }
+  .tip-list li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: .85rem; color: var(--ink3); line-height: 1.6;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .tip-list li:last-child { border-bottom: none; padding-bottom: 0; }
+  .tip-list li .ti { flex-shrink: 0; margin-top: 1px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- About banner -->
+<div class="about-hero">
+  <div class="ah-icon">🐔</div>
+  <div>
+    <h2>Poultry Record Digitizer</h2>
+    <p>
+      A college project that converts handwritten or printed poultry farm register photos
+      into structured digital data using OCR technology.
+      It extracts ABW, FCR, medicine notes and more — automatically.
+    </p>
+  </div>
+</div>
+
+<div class="help-grid">
+
+  <!-- How to use -->
+  <div class="help-card">
+    <h3>📖 How to Use</h3>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Login or Register</h4>
+        <p>Create a free account and sign in to access the dashboard.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Upload or Capture Image</h4>
+        <p>Upload a gallery photo or use your phone camera to capture your register sheet directly.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Wait for Processing</h4>
+        <p>The system compresses the image, runs dual OCR (EasyOCR + Tesseract), and extracts structured data.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Explore the Dashboard</h4>
+        <p>After processing, the dashboard shows your summary. Navigate to Report, Alerts, or Insights.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>Edit & Export</h4>
+        <p>On the Report page, edit any incorrect values and download as Excel or PDF.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <div class="help-card">
+    <h3>📷 Tips for Best OCR Results</h3>
+    <ul class="tip-list">
+      <li><span class="ti">☀️</span> Use natural light or bright indoor lighting — avoid dark or shadowy conditions</li>
+      <li><span class="ti">📐</span> Hold the camera flat and parallel to the paper — avoid angles</li>
+      <li><span class="ti">🔍</span> Ensure the entire register page fits in the frame</li>
+      <li><span class="ti">📱</span> Use the highest camera resolution available on your device</li>
+      <li><span class="ti">🚫</span> Avoid blurry or out-of-focus images — retake if needed</li>
+      <li><span class="ti">📄</span> Printed or typed registers give better accuracy than handwritten</li>
+      <li><span class="ti">🛠️</span> Check the Debug section on the Report page if results seem wrong</li>
+      <li><span class="ti">🖼️</span> Open <code style="font-size:.78rem;background:var(--surface2);padding:1px 6px;border-radius:4px">processed_debug.jpg</code> to inspect the preprocessed image</li>
+    </ul>
+  </div>
+
+</div>
+
+{% endblock %}

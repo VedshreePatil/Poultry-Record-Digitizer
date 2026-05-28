@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}History — Poultry Digitizer{% endblock %}
+{% block page_title %}Record History{% endblock %}
+
+{% block extra_head %}
+<style>
+  .search-bar{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;margin-bottom:20px;box-shadow:var(--shadow);}
+  .search-bar input{flex:1;border:none;outline:none;font-family:var(--font);font-size:.9rem;color:var(--ink);background:transparent;}
+  .search-bar input::placeholder{color:var(--ink3);}
+
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:22px;}
+  .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;text-align:center;box-shadow:var(--shadow);}
+  .stat-box .sv{font-size:1.8rem;font-weight:800;font-family:var(--mono);color:var(--accent);}
+  .stat-box .sl{font-size:.7rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:.86rem;}
+  thead th{background:var(--ink);color:#fff;padding:11px 14px;text-align:left;font-weight:500;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:nth-child(even){background:var(--surface2);}
+  tbody tr:hover{background:var(--accent-lt);}
+  td{padding:11px 14px;color:var(--ink);}
+  td.mono{font-family:var(--mono);font-weight:600;color:var(--accent);}
+
+  .chip{display:inline-block;padding:2px 9px;border-radius:12px;font-size:.7rem;font-weight:700;}
+  .chip-g{background:var(--accent-lt);color:var(--accent);}
+  .chip-b{background:var(--blue-lt);color:var(--blue);}
+
+  .no-res{text-align:center;padding:24px;color:var(--ink3);font-size:.88rem;display:none;}
+  .no-res.show{display:block;}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="stats-row">
+  <div class="stat-box">
+    <div class="sv">{{ records|length }}</div>
+    <div class="sl">Total Records</div>
+  </div>
+  <div class="stat-box">
+    <div class="sv">{{ records|selectattr('feed')|list|length }}</div>
+    <div class="sl">With Feed Data</div>
+  </div>
+  <div class="stat-box">
+    <div class="sv">{{ records|selectattr('eggs')|list|length }}</div>
+    <div class="sl">With Egg Data</div>
+  </div>
+</div>
+
+<div class="search-bar">
+  <span>🔍</span>
+  <input type="text" id="searchInput" placeholder="Search by date, batch, or image name…" oninput="filterRows()"/>
+</div>
+
+{% if records %}
+<div class="card" style="overflow:hidden">
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>Image</th>
+          <th>Feed</th>
+          <th>Eggs</th>
+          <th>Mortality</th>
+          <th>ABW (gms)</th>
+          <th>FCR</th>
+          <th>Engine</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="histBody">
+        {% for rec in records %}
+        <tr class="hist-row"
+            data-search="{{ (rec.date_field or '') ~ ' ' ~ (rec.batch or '') ~ ' ' ~ (rec.image_name or '') | lower }}"
+            onclick="loadRecord({{ rec.id }})">
+          <td style="color:var(--ink3)">{{ loop.index }}</td>
+          <td>{{ rec.date_field or rec.created_at[:10] or '—' }}</td>
+          <td style="font-size:.78rem;color:var(--ink3)">{{ rec.image_name or '—' }}</td>
+          <td class="mono">{{ rec.feed if rec.feed is not none else '—' }}</td>
+          <td class="mono">{{ rec.eggs if rec.eggs is not none else '—' }}</td>
+          <td class="mono">{{ rec.mortality if rec.mortality is not none else '—' }}</td>
+          <td class="mono">{{ rec.latest_abw if rec.latest_abw is not none else '—' }}</td>
+          <td class="mono">{{ rec.latest_fcr if rec.latest_fcr is not none else '—' }}</td>
+          <td><span class="chip chip-b">{{ rec.ocr_engine or '—' }}</span></td>
+          <td onclick="event.stopPropagation()">
+            <a href="{{ url_for('history_detail', record_id=rec.id) }}"
+               class="btn btn-ghost btn-sm">View</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="no-res" id="noRes">No records match your search.</div>
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div class="es-icon">📭</div>
+  <h3>No records yet</h3>
+  <p>Upload a register image from the <a href="{{ url_for('dashboard') }}" style="color:var(--accent);font-weight:600">Dashboard</a> to get started.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterRows() {
+  const q   = document.getElementById('searchInput').value.toLowerCase();
+  const rows = document.querySelectorAll('.hist-row');
+  let vis = 0;
+  rows.forEach(r => {
+    const show = !q || r.dataset.search.includes(q);
+    r.style.display = show ? '' : 'none';
+    if (show) vis++;
+  });
+  const nr = document.getElementById('noRes');
+  if (nr) nr.classList.toggle('show', vis === 0 && q.length > 0);
+}
+
+function loadRecord(id) {
+  window.location.href = '/history/' + id;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Poultry Digitizer{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #F4F6F3; --surface:  #FFFFFF; --surface2: #F0F3EF;
+      --border:    #E2E8E1; --border2:  #CDD6CC;
+      --ink:       #161C15; --ink2:     #3D4D3C; --ink3:     #7A8C79;
+      --accent:    #2A6B2A; --accent-lt:#EBF4EB; --accent-mid:#4CAF50;
+      --amber:     #D97706; --amber-lt: #FFFBEB;
+      --red:       #DC2626; --red-lt:   #FEF2F2;
+      --blue:      #1D4ED8; --blue-lt:  #EFF6FF;
+      --sidebar-w: 260px;   --topbar-h: 58px;
+      --r: 10px; --r-lg: 16px;
+      --shadow:    0 1px 3px rgba(0,0,0,.07),0 1px 8px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.09),0 2px 4px rgba(0,0,0,.04);
+      --font: 'Plus Jakarta Sans', sans-serif;
+      --mono: 'Fira Code', monospace;
+    }
+    [data-theme="dark"] {
+      --bg:#0F1410; --surface:#1A211A; --surface2:#212B21;
+      --border:#2C3B2C; --border2:#3A4D3A;
+      --ink:#E8F0E8; --ink2:#B0C4B0; --ink3:#6B856B;
+      --accent-lt:#1A2E1A; --amber-lt:#1C1500;
+      --red-lt:#1C0808; --blue-lt:#080F1C;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.55;transition:background .3s,color .3s;}
+
+    /* Overlay */
+    .sb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;}
+    .sb-overlay.open{opacity:1;pointer-events:all;}
+
+    /* Sidebar — hidden by default */
+    .sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:var(--surface);border-right:1px solid var(--border);z-index:201;display:flex;flex-direction:column;transform:translateX(calc(-1 * var(--sidebar-w)));transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow-md);overflow:hidden;}
+    .sidebar.open{transform:translateX(0);}
+
+    .sb-head{padding:20px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+    .sb-brand{display:flex;align-items:center;gap:10px;font-size:.95rem;font-weight:800;color:var(--accent);}
+    .sb-brand-icon{width:32px;height:32px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;}
+    .sb-close{width:28px;height:28px;border:none;background:var(--surface2);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:1rem;transition:background .15s;}
+    .sb-close:hover{background:var(--border);color:var(--ink);}
+
+    .sb-user{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px;}
+    .sb-avatar{width:36px;height:36px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:#fff;flex-shrink:0;}
+    .sb-uname{font-size:.85rem;font-weight:600;color:var(--ink);}
+    .sb-role {font-size:.72rem;color:var(--ink3);}
+
+    .sb-nav{flex:1;padding:12px 10px;overflow-y:auto;}
+    .sb-section-label{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);padding:8px 10px 4px;}
+    .sb-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);color:var(--ink2);text-decoration:none;font-size:.875rem;font-weight:500;transition:background .14s,color .14s;margin-bottom:2px;}
+    .sb-link:hover{background:var(--surface2);color:var(--ink);}
+    .sb-link.active{background:var(--accent-lt);color:var(--accent);font-weight:600;}
+    .sb-link .si{width:20px;text-align:center;font-size:1rem;flex-shrink:0;}
+    .sb-footer{padding:12px 10px;border-top:1px solid var(--border);}
+
+    /* Topbar */
+    .topbar{height:var(--topbar-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;}
+    .topbar-left{display:flex;align-items:center;gap:14px;}
+    .hamburger{width:36px;height:36px;border:none;background:var(--surface2);border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:8px;transition:background .15s;}
+    .hamburger:hover{background:var(--border);}
+    .hamburger span{display:block;width:18px;height:2px;background:var(--ink2);border-radius:2px;}
+    .topbar-title{font-size:1rem;font-weight:700;color:var(--ink);}
+    .topbar-right{display:flex;align-items:center;gap:10px;}
+
+    /* Page */
+    .page{padding:28px 28px 64px;max-width:1100px;margin:0 auto;}
+    @media(max-width:600px){.page{padding:18px 16px 48px;}}
+
+    /* Flashes */
+    .flashes{margin-bottom:18px;}
+    .flash{padding:11px 16px;border-radius:var(--r);font-size:.875rem;margin-bottom:8px;display:flex;align-items:center;gap:10px;animation:fadeDown .25s ease;}
+    @keyframes fadeDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+    .flash-error  {background:var(--red-lt);  color:var(--red);   border:1px solid #FCA5A5;}
+    .flash-success{background:var(--accent-lt);color:var(--accent);border:1px solid #86EFAC;}
+    .flash-info   {background:var(--blue-lt); color:var(--blue);  border:1px solid #93C5FD;}
+    .flash-warning{background:var(--amber-lt);color:var(--amber); border:1px solid #FCD34D;}
+
+    /* Cards */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;}
+    .card-hd{padding:15px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .card-hd-title{font-size:.9rem;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;}
+    .card-body{padding:22px;}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:var(--r);font-family:var(--font);font-size:.875rem;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .17s;white-space:nowrap;}
+    .btn-primary{background:var(--accent);color:#fff;}
+    .btn-primary:hover{background:#1d4d1d;}
+    .btn-outline{background:transparent;border:1.5px solid var(--border2);color:var(--ink2);}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+    .btn-ghost{background:var(--surface2);color:var(--ink2);}
+    .btn-ghost:hover{background:var(--border);color:var(--ink);}
+    .btn-sm{padding:6px 14px;font-size:.8rem;}
+    .btn-lg{padding:12px 28px;font-size:.95rem;}
+    .btn-block{width:100%;justify-content:center;}
+    .btn:disabled{opacity:.5;pointer-events:none;}
+
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;}
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+    .modal{background:var(--surface);border-radius:var(--r-lg);padding:28px;width:min(440px,94vw);box-shadow:0 24px 60px rgba(0,0,0,.25);transform:scale(.94) translateY(10px);transition:transform .22s;}
+    .modal-overlay.open .modal{transform:scale(1) translateY(0);}
+    .modal h3{font-size:1.05rem;font-weight:700;margin-bottom:6px;color:var(--ink);}
+    .modal p{font-size:.85rem;color:var(--ink3);margin-bottom:16px;}
+    .modal-input{width:100%;padding:10px 14px;border:1.5px solid var(--border2);border-radius:var(--r);font-family:var(--font);font-size:.9rem;color:var(--ink);background:var(--surface2);outline:none;margin-bottom:18px;transition:border-color .17s;}
+    .modal-input:focus{border-color:var(--accent);background:var(--surface);}
+    .modal-btns{display:flex;gap:10px;justify-content:flex-end;}
+
+    /* Toast */
+    .toast{position:fixed;bottom:22px;right:22px;background:var(--ink);color:#fff;padding:11px 18px;border-radius:var(--r);font-size:.85rem;font-weight:500;box-shadow:var(--shadow-md);z-index:999;display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(12px);transition:opacity .22s,transform .22s;pointer-events:none;}
+    .toast.show{opacity:1;transform:translateY(0);}
+
+    /* Utilities */
+    .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:700;}
+    .badge-green{background:var(--accent-lt);color:var(--accent);}
+    .badge-amber{background:var(--amber-lt); color:var(--amber);}
+    .badge-red  {background:var(--red-lt);   color:var(--red);}
+    .badge-blue {background:var(--blue-lt);  color:var(--blue);}
+
+    .section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink3);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+    .section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+    .empty-state{text-align:center;padding:48px 24px;color:var(--ink3);}
+    .empty-state .es-icon{font-size:2.5rem;margin-bottom:12px;}
+    .empty-state h3{font-size:1rem;font-weight:600;color:var(--ink2);margin-bottom:6px;}
+    .empty-state p{font-size:.85rem;}
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if session.username %}
+
+<div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sb-head">
+    <div class="sb-brand">
+      <div class="sb-brand-icon">🐔</div>
+      Poultry Digitizer
+    </div>
+    <button class="sb-close" onclick="closeSidebar()">✕</button>
+  </div>
+
+  <div class="sb-user">
+    <div class="sb-avatar">{{ session.username[0].upper() }}</div>
+    <div>
+      <div class="sb-uname">{{ session.username }}</div>
+      <div class="sb-role">Poultry Manager</div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section-label">Main</div>
+    <a href="{{ url_for('dashboard') }}"
+       class="sb-link {% if request.endpoint=='dashboard' %}active{% endif %}"
+       onclick="autoClose()">
+      <span class="si">🏠</span><span data-key="dashboard">Dashboard</span>
+    </a>
+    <a href="{{ url_for('history') }}"
+       class="sb-link {% if request.endpoint=='history' %}active{% endif %}"
+       onclick="autoClose()">
+      <span class="si">📂</span><span data-key="history">Record History</span>
+    </a>
+
+    <div class="sb-section-label" style="margin-top:8px">My Files</div>
+    <a href="{{ url_for('downloads') }}"
+       class="sb-link {% if request.endpoint=='downloads' %}active{% endif %}"
+       onclick="autoClose()">
+      <span class="si">📥</span><span data-key="downloads">Downloads</span>
+    </a>
+
+    <div class="sb-section-label" style="margin-top:8px">Account</div>
+    <a href="{{ url_for('account') }}"
+       class="sb-link {% if request.endpoint=='account' %}active{% endif %}"
+       onclick="autoClose()">
+      <span class="si">👤</span><span data-key="profile">Profile</span>
+    </a>
+    <a href="{{ url_for('settings') }}"
+       class="sb-link {% if request.endpoint=='settings' %}active{% endif %}"
+       onclick="autoClose()">
+      <span class="si">⚙️</span><span data-key="settings">Settings</span>
+    </a>
+    <a href="{{ url_for('help_page') }}"
+       class="sb-link {% if request.endpoint=='help_page' %}active{% endif %}"
+       onclick="autoClose()">
+      <span class="si">❓</span><span data-key="help">Help & About</span>
+    </a>
+  </nav>
+
+  <div class="sb-footer">
+    <a href="{{ url_for('logout') }}" class="sb-link" style="color:var(--red)">
+      <span class="si">↩</span><span data-key="logout">Logout</span>
+    </a>
+  </div>
+</aside>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <button class="hamburger" onclick="toggleSidebar()" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+  </div>
+  <div class="topbar-right">{% block topbar_right %}{% endblock %}</div>
+</header>
+
+<main>
+  <div class="page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flashes">
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">
+        <span>{% if cat=='error'%}❌{% elif cat=='success'%}✅{% elif cat=='warning'%}⚠️{% else %}ℹ️{% endif %}</span>
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+{% else %}
+{% block auth_content %}{% endblock %}
+{% endif %}
+
+<div class="toast" id="gToast"></div>
+
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sbOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sbOverlay').classList.remove('open');
+}
+function autoClose() {
+  if (window.innerWidth < 900) closeSidebar();
+}
+function showToast(msg, dur=3000) {
+  const t = document.getElementById('gToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+/* Restore theme */
+(function(){
+  const t = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+
+/* Restore language */
+(function(){
+  const LANG = {
+    en: { dashboard:"Dashboard", history:"Record History", downloads:"Downloads", profile:"Profile", settings:"Settings", help:"Help & About", logout:"Logout" },
+    hi: { dashboard:"डैशबोर्ड", history:"रिकॉर्ड इतिहास", downloads:"डाउनलोड", profile:"प्रोफ़ाइल", settings:"सेटिंग्स", help:"सहायता", logout:"लॉग आउट" },
+    mr: { dashboard:"डॅशबोर्ड", history:"रेकॉर्ड इतिहास", downloads:"डाउनलोड", profile:"प्रोफाइल", settings:"सेटिंग्ज", help:"मदत", logout:"लॉग आउट" },
+  };
+  const lang = localStorage.getItem('lang') || 'en';
+  const dict = LANG[lang] || LANG['en'];
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const k = el.getAttribute('data-key');
+    if (dict[k]) el.textContent = dict[k];
+  });
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

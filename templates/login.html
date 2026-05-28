@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Login — Poultry Digitizer{% endblock %}
+{% block auth_content %}
+<style>
+  .auth-page{min-height:100vh;display:flex;background:var(--bg);}
+  .auth-left{
+    flex:1;background:var(--accent);
+    display:flex;flex-direction:column;justify-content:center;padding:60px;
+    position:relative;overflow:hidden;
+  }
+  .auth-left::before{
+    content:'';position:absolute;inset:0;
+    background:repeating-linear-gradient(-45deg,rgba(255,255,255,.03) 0px,rgba(255,255,255,.03) 1px,transparent 1px,transparent 24px);
+  }
+  .al-logo{font-size:1.2rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;margin-bottom:48px;}
+  .al-icon{width:40px;height:40px;background:rgba(255,255,255,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
+  .auth-left h1{font-size:2.4rem;font-weight:800;color:#fff;line-height:1.2;margin-bottom:14px;}
+  .auth-left p {font-size:1rem;color:rgba(255,255,255,.7);line-height:1.65;}
+  .auth-right{width:460px;display:flex;align-items:center;justify-content:center;padding:40px 48px;background:var(--surface);}
+  .auth-form-wrap{width:100%;}
+  .auth-form-wrap h2{font-size:1.6rem;font-weight:800;color:var(--ink);margin-bottom:6px;}
+  .auth-form-wrap .sub{font-size:.875rem;color:var(--ink3);margin-bottom:28px;}
+  .form-group{margin-bottom:16px;}
+  .form-label{display:block;font-size:.78rem;font-weight:600;color:var(--ink2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
+  .form-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:.92rem;color:var(--ink);background:var(--surface2);outline:none;transition:border-color .17s,box-shadow .17s;}
+  .form-input:focus{border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 3px rgba(42,107,42,.12);}
+  .form-input::placeholder{color:var(--ink3);}
+  .auth-flashes{margin-bottom:18px;}
+  .auth-footer{text-align:center;margin-top:22px;font-size:.875rem;color:var(--ink3);}
+  .auth-footer a{color:var(--accent);font-weight:600;text-decoration:none;}
+  @media(max-width:768px){.auth-left{display:none;}.auth-right{width:100%;padding:40px 24px;}}
+</style>
+<div class="auth-page">
+  <div class="auth-left">
+    <div class="al-logo"><div class="al-icon">🐔</div>Poultry Digitizer</div>
+    <h1>Turn paper records into digital data</h1>
+    <p>Upload a photo of your register sheet and get structured ABW, FCR and medicine data in seconds.</p>
+  </div>
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <h2>Welcome back</h2>
+      <p class="sub">Sign in to your account to continue</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="auth-flashes">
+        {% for cat,msg in messages %}
+        <div class="flash flash-{{ cat }}"><span>{% if cat=='error'%}❌{% elif cat=='success'%}✅{% else %}ℹ️{% endif %}</span>{{ msg }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" type="text" name="username" placeholder="Enter username" required autofocus/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" name="password" placeholder="Enter password" required/>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:8px">Sign In →</button>
+      </form>
+      <div class="auth-footer">Don't have an account? <a href="{{ url_for('register') }}">Create one</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

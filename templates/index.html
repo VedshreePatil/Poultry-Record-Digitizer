@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Poultry Record Digitizer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-900: #1B5E20;
+      --green-700: #2E7D32;
+      --green-500: #4CAF50;
+      --green-100: #E8F5E9;
+      --green-50:  #F1F8E9;
+      --amber-100: #FFF8E1;
+      --amber-300: #FFD54F;
+      --blue-100:  #E3F2FD;
+      --red-100:   #FFEBEE;
+      --red-700:   #C62828;
+      --orange-700:#E65100;
+      --grey-50:   #FAFAFA;
+      --grey-100:  #F5F5F5;
+      --grey-200:  #EEEEEE;
+      --grey-300:  #E0E0E0;
+      --grey-500:  #9E9E9E;
+      --grey-700:  #616161;
+      --grey-900:  #212121;
+      --white:     #FFFFFF;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+      --shadow-lg: 0 10px 30px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.05);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --font: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--grey-100);
+      color: var(--grey-900);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ── Navbar ──────────────────────────────────── */
+    .navbar {
+      background: var(--green-900);
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--white);
+      letter-spacing: 0.01em;
+    }
+    .nav-brand .icon {
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .nav-right {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.55);
+      font-weight: 400;
+    }
+
+    /* ── Page layout ─────────────────────────────── */
+    .page { max-width: 1080px; margin: 0 auto; padding: 28px 20px 64px; }
+
+    /* ── Card base ───────────────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--grey-200);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--grey-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .card-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--green-900);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-body { padding: 22px; }
+
+    /* ── Upload + Camera section ─────────────────── */
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 560px) { .upload-grid { grid-template-columns: 1fr; } }
+
+    .upload-option {
+      border: 2px dashed var(--grey-300);
+      border-radius: var(--radius-md);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .upload-option:hover {
+      border-color: var(--green-500);
+      background: var(--green-50);
+    }
+    .upload-option .opt-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .upload-option .opt-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--grey-900);
+      margin-bottom: 4px;
+    }
+    .upload-option .opt-sub {
+      font-size: 0.78rem;
+      color: var(--grey-500);
+    }
+    .upload-option input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Selected file indicator */
+    .file-selected {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: var(--green-100);
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      color: var(--green-900);
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+    .file-selected.show { display: flex; }
+
+    .btn-process {
+      width: 100%;
+      margin-top: 16px;
+      background: var(--green-700);
+      color: var(--white);
+      border: none;
+      padding: 13px 24px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.18s, transform 0.1s;
+    }
+    .btn-process:hover  { background: var(--green-900); }
+    .btn-process:active { transform: scale(0.99); }
+
+    /* ── Quality warning ─────────────────────────── */
+    .quality-warn {
+      background: #FFF3E0;
+      border: 1px solid #FFB74D;
+      border-left: 4px solid #FB8C00;
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      color: #E65100;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    /* ── Error box ───────────────────────────────── */
+    .error-box {
+      background: var(--red-100);
+      border: 1px solid #EF9A9A;
+      border-left: 4px solid var(--red-700);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      color: var(--red-700);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    /* ── Dashboard header ────────────────────────── */
+    .dash-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .dash-title    { font-size: 1.15rem; font-weight: 700; color: var(--green-900); }
+    .dash-subtitle { font-size: 0.8rem;  color: var(--grey-500); margin-top: 3px; }
+
+    /* Download buttons — ONE place only */
+    .download-group { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-dl {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 20px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.18s;
+      border: 1.5px solid transparent;
+    }
+    .btn-xl {
+      background: #E8F5E9; color: #1B5E20;
+      border-color: #A5D6A7;
+    }
+    .btn-xl:hover { background: #C8E6C9; border-color: #388E3C; }
+    .btn-pdf {
+      background: #FFF3E0; color: #E65100;
+      border-color: #FFCC80;
+    }
+    .btn-pdf:hover { background: #FFE0B2; border-color: #EF6C00; }
+
+    /* ── Metric cards ────────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .metric {
+      background: var(--white);
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-md);
+      padding: 18px 14px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.2s;
+    }
+    .metric:hover { box-shadow: var(--shadow-md); }
+    .metric .m-icon  { font-size: 1.4rem; margin-bottom: 6px; }
+    .metric .m-label { font-size: 0.7rem; color: var(--grey-500); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .metric .m-val   { font-size: 1.9rem; font-weight: 700; color: var(--green-700); line-height: 1; font-family: var(--mono); }
+    .metric .m-val.nil { color: var(--grey-300); font-size: 1.4rem; }
+    .metric .m-unit  { font-size: 0.68rem; color: var(--grey-500); margin-top: 5px; }
+
+    /* ── Engine badge ────────────────────────────── */
+    .engine-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--blue-100);
+      color: #1565C0;
+      border-radius: 20px;
+      padding: 4px 13px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-bottom: 18px;
+    }
+
+    /* ── OCR summary bar ─────────────────────────── */
+    .summary-bar {
+      background: var(--green-100);
+      border: 1px solid #A5D6A7;
+      border-radius: var(--radius-sm);
+      padding: 11px 16px;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      color: var(--green-900);
+      margin-bottom: 20px;
+    }
+
+    /* ── Alerts ──────────────────────────────────── */
+    .alerts-wrap { margin-bottom: 20px; }
+    .alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 13px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      font-size: 0.88rem;
+      border: 1px solid transparent;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+    .alert-warn  { background: #FFF8E1; border-color: #FFE082; color: #F57F17; }
+    .alert-danger{ background: var(--red-100);  border-color: #EF9A9A; color: var(--red-700); }
+    .alert-info  { background: var(--blue-100); border-color: #90CAF9; color: #1565C0; }
+    .alert-icon  { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .alert-body  .a-title { font-weight: 600; margin-bottom: 2px; }
+    .alert-body  .a-msg   { font-size: 0.82rem; opacity: 0.85; }
+
+    /* ── Editable data table ─────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    thead th {
+      background: var(--green-900);
+      color: var(--white);
+      padding: 11px 14px;
+      text-align: left;
+      font-weight: 500;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--grey-200); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:nth-child(even) { background: var(--grey-50); }
+    tbody tr:hover { background: var(--green-50); }
+    td { padding: 10px 14px; color: var(--grey-900); }
+    td.num { font-family: var(--mono); font-weight: 600; color: var(--green-700); }
+
+    /* Editable cell */
+    .editable {
+      border: 1.5px solid transparent;
+      border-radius: 5px;
+      padding: 3px 7px;
+      font-family: var(--mono);
+      font-size: 0.87rem;
+      font-weight: 600;
+      color: var(--green-700);
+      background: transparent;
+      width: 90px;
+      transition: border-color 0.18s, background 0.18s;
+      outline: none;
+    }
+    .editable:focus {
+      border-color: var(--green-500);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(76,175,80,0.15);
+    }
+    .editable.changed { border-color: var(--amber-300); background: var(--amber-100); }
+
+    .rating { display:inline-block; padding:2px 10px; border-radius:12px; font-size:0.76rem; font-weight:600; }
+    .r-exc  { background:#E0F2F1; color:#00695C; }
+    .r-good { background:var(--green-100); color:var(--green-900); }
+    .r-avg  { background:var(--amber-100); color:#F57F17; }
+    .r-poor { background:var(--red-100);   color:var(--red-700); }
+
+    .chg-pos { color: var(--green-700); font-weight:600; font-family:var(--mono); }
+    .chg-neg { color: var(--red-700);   font-weight:600; font-family:var(--mono); }
+
+    /* Save button */
+    .save-bar {
+      background: var(--amber-100);
+      border: 1px solid var(--amber-300);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+      display: none;
+    }
+    .save-bar.visible { display: flex; }
+    .save-bar p { font-size: 0.85rem; color: #795548; }
+    .btn-save {
+      background: var(--green-700);
+      color: var(--white);
+      border: none;
+      padding: 8px 22px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .btn-save:hover { background: var(--green-900); }
+
+    /* Save toast */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--green-900);
+      color: var(--white);
+      padding: 12px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+    }
+    .toast.show { opacity:1; transform:translateY(0); }
+
+    /* ── Charts ──────────────────────────────────── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) { .charts-grid { grid-template-columns: 1fr; } }
+    .chart-card {
+      background: var(--white);
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+    .chart-card h3 { font-size: 0.82rem; font-weight: 600; color: var(--grey-700); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; }
+    .chart-card canvas { max-height: 220px; }
+
+    /* ── Notes list ──────────────────────────────── */
+    .note-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      background: var(--amber-100);
+      border-left: 3px solid var(--amber-300);
+      font-size: 0.87rem;
+    }
+    .note-num {
+      background: var(--green-700);
+      color: var(--white);
+      border-radius: 50%;
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700;
+      flex-shrink: 0; margin-top: 1px;
+    }
+
+    /* ── Debug collapsibles ──────────────────────── */
+    details { margin-bottom: 10px; }
+    details summary {
+      cursor: pointer;
+      color: var(--grey-500);
+      font-size: 0.83rem;
+      padding: 6px 0;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      list-style: none;
+    }
+    details summary::before { content:"▶"; font-size:9px; transition:transform 0.2s; }
+    details[open] summary::before { transform:rotate(90deg); }
+    details summary:hover { color: var(--green-700); }
+    .debug-box {
+      background: var(--grey-50);
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 6px;
+      color: var(--grey-700);
+    }
+
+    /* ── Count badge ─────────────────────────────── */
+    .count-badge {
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 2px 9px;
+      font-size: 0.72rem;
+      font-weight: 400;
+    }
+
+    /* ── Progress bar cell ───────────────────────── */
+    .prog-wrap { display:flex; align-items:center; gap:8px; }
+    .prog-bar  { flex:1; height:5px; background:var(--grey-200); border-radius:3px; overflow:hidden; min-width:50px; }
+    .prog-fill { height:100%; border-radius:3px; }
+    .prog-pct  { font-size:0.72rem; color:var(--grey-500); min-width:36px; }
+
+    /* Loading spinner overlay */
+    .spinner-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(3px);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .spinner-overlay.show { display: flex; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid var(--grey-200);
+      border-top-color: var(--green-700);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-text { font-size: 0.9rem; color: var(--grey-700); font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<!-- Spinner overlay -->
+<div class="spinner-overlay" id="spinnerOverlay">
+  <div class="spinner"></div>
+  <div class="spinner-text">Processing image, please wait…</div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">✅ Data saved successfully</div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <div class="icon">🐔</div>
+    Poultry Record Digitizer
+  </div>
+  <div class="nav-right">OCR · Excel · PDF</div>
+</nav>
+
+<div class="page">
+
+  <!-- ── UPLOAD / CAPTURE CARD ───────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📁 Upload or Capture Record Image</div>
+    </div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        <div class="upload-grid">
+
+          <!-- Upload from gallery -->
+          <div class="upload-option" id="uploadBox">
+            <input type="file" name="image" id="fileInput"
+                   accept="image/*"
+                   onchange="onFileSelected(this, 'gallery')"/>
+            <span class="opt-icon">🖼️</span>
+            <div class="opt-title">Upload Image</div>
+            <div class="opt-sub">JPG, PNG, TIFF, WEBP</div>
+          </div>
+
+          <!-- Camera capture (mobile-friendly) -->
+          <div class="upload-option" id="cameraBox">
+            <input type="file" name="image" id="cameraInput"
+                   accept="image/*" capture="environment"
+                   onchange="onFileSelected(this, 'camera')"/>
+            <span class="opt-icon">📷</span>
+            <div class="opt-title">Capture Image</div>
+            <div class="opt-sub">Use device camera</div>
+          </div>
+
+        </div>
+
+        <!-- Selected file indicator -->
+        <div class="file-selected" id="fileIndicator">
+          <span>📎</span>
+          <span id="fileName">No file selected</span>
+        </div>
+
+        <button type="submit" class="btn-process"
+                onclick="showSpinner()">
+          ⚙️ Extract &amp; Analyse
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Error -->
+  {% if error %}
+  <div class="error-box">
+    <span>❌</span>
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
+  <!-- ── RESULTS ──────────────────────────────────── -->
+  {% if result %}
+
+  <!-- Quality warning (if any) -->
+  {% if result.quality_warn %}
+  <div class="quality-warn">
+    <span>⚠️</span>
+    <span>{{ result.quality_warn }}</span>
+  </div>
+  {% endif %}
+
+  <!-- Dashboard header + SINGLE download section -->
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">📊 Extracted Data Dashboard</div>
+      <div class="dash-subtitle">
+        OCR Engine: {{ result.ocr_engine }} &nbsp;·&nbsp;
+        {{ result.abw_values | length }} ABW readings &nbsp;·&nbsp;
+        {{ result.fcr_values | length }} FCR readings
+      </div>
+    </div>
+    <div class="download-group">
+      <a href="/export/excel" class="btn-dl btn-xl">📗 Download Excel</a>
+      <a href="/export/pdf"   class="btn-dl btn-pdf">📕 Download PDF</a>
+    </div>
+  </div>
+
+  <!-- ── ALERTS ─────────────────────────────────── -->
+  <div class="alerts-wrap" id="alertsWrap">
+    <!-- Populated by JS below -->
+  </div>
+
+  <!-- ── KEY METRICS ───────────────────────────── -->
+  <div class="metrics-grid">
+    <div class="metric">
+      <div class="m-icon">⚖️</div>
+      <div class="m-label">Latest ABW</div>
+      <div class="m-val {% if result.latest_abw is none %}nil{% endif %}">
+        {{ result.latest_abw if result.latest_abw is not none else "—" }}
+      </div>
+      <div class="m-unit">grams</div>
+    </div>
+    <div class="metric">
+      <div class="m-icon">📈</div>
+      <div class="m-label">Latest FCR</div>
+      <div class="m-val {% if result.latest_fcr is none %}nil{% endif %}">
+        {{ result.latest_fcr if result.latest_fcr is not none else "—" }}
+      </div>
+      <div class="m-unit">feed conversion ratio</div>
+    </div>
+    <div class="metric">
+      <div class="m-icon">💀</div>
+      <div class="m-label">Total Mortality</div>
+      <div class="m-val {% if result.total_mortality is none %}nil{% endif %}">
+        {{ result.total_mortality if result.total_mortality is not none else "—" }}
+      </div>
+      <div class="m-unit">birds</div>
+    </div>
+    <div class="metric">
+      <div class="m-icon">📋</div>
+      <div class="m-label">ABW Readings</div>
+      <div class="m-val">{{ result.abw_values | length }}</div>
+      <div class="m-unit">data points</div>
+    </div>
+    <div class="metric">
+      <div class="m-icon">📋</div>
+      <div class="m-label">FCR Readings</div>
+      <div class="m-val">{{ result.fcr_values | length }}</div>
+      <div class="m-unit">data points</div>
+    </div>
+  </div>
+
+  <!-- OCR summary line -->
+  <div class="summary-bar">{{ result.formatted }}</div>
+
+  <!-- ── CHARTS DASHBOARD ───────────────────────── -->
+  {% if result.abw_values or result.fcr_values %}
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <div class="card-title">📉 Growth Trend Charts</div>
+    </div>
+    <div class="card-body">
+      <div class="charts-grid">
+        {% if result.abw_values %}
+        <div class="chart-card">
+          <h3>⚖️ ABW Growth (gms)</h3>
+          <canvas id="abwChart"></canvas>
+        </div>
+        {% endif %}
+        {% if result.fcr_values %}
+        <div class="chart-card">
+          <h3>📈 FCR Trend</h3>
+          <canvas id="fcrChart"></canvas>
+        </div>
+        {% endif %}
+        {% if result.abw_values and result.abw_values | length > 1 %}
+        <div class="chart-card">
+          <h3>📊 Weekly Weight Gain (gms)</h3>
+          <canvas id="gainChart"></canvas>
+        </div>
+        {% endif %}
+        {% if result.fcr_values and result.fcr_values | length > 1 %}
+        <div class="chart-card">
+          <h3>🔄 FCR Distribution</h3>
+          <canvas id="fcrBarChart"></canvas>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── EDITABLE ABW TABLE ─────────────────────── -->
+  {% if result.abw_values %}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        ⚖️ ABW Readings
+        <span class="count-badge" style="background:var(--green-100);color:var(--green-900)">
+          {{ result.abw_values | length }} readings
+        </span>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div class="table-wrap">
+        <table id="abwTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>ABW (gms)</th>
+              <th>Est. Week</th>
+              <th>Change</th>
+              <th>% Change</th>
+              <th>Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for val in result.abw_values %}
+            {% set i = loop.index0 %}
+            {% set prev = result.abw_values[i-1] if i > 0 else none %}
+            {% set change = (val - prev) if prev is not none else none %}
+            {% set pct = ((change / prev * 100) | round(1)) if (change is not none and prev and prev > 0) else none %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>
+                <input class="editable" type="number"
+                       data-field="abw_values"
+                       data-index="{{ i }}"
+                       value="{{ val }}"
+                       onchange="markChanged(this)"
+                       oninput="markChanged(this)"/>
+              </td>
+              <td>~Week {{ loop.index }}</td>
+              <td class="{{ 'chg-pos' if change is not none and change >= 0 else 'chg-neg' }}">
+                {% if change is not none %}
+                  {{ '+' if change >= 0 else '' }}{{ change }} gms
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if pct is not none %}{{ pct }}%{% else %}—{% endif %}
+              </td>
+              <td>
+                {% if pct is not none %}
+                <div class="prog-wrap">
+                  <div class="prog-bar">
+                    <div class="prog-fill"
+                         style="width:{{ [pct|abs,100]|min }}%;
+                                background:{{ '#2E7D32' if change >= 0 else '#C62828' }}">
+                    </div>
+                  </div>
+                  <span class="prog-pct">{{ pct }}%</span>
+                </div>
+                {% else %}<span style="color:var(--grey-300)">first</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="save-bar" id="savebar-abw">
+        <p>✏️ You've edited ABW values. Save to update exports.</p>
+        <button class="btn-save" onclick="saveEdits()">💾 Save Changes</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── EDITABLE FCR TABLE ─────────────────────── -->
+  {% if result.fcr_values %}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        📈 FCR Readings
+        <span class="count-badge" style="background:var(--green-100);color:var(--green-900)">
+          {{ result.fcr_values | length }} readings
+        </span>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div class="table-wrap">
+        <table id="fcrTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>FCR Value</th>
+              <th>Rating</th>
+              <th>Interpretation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for val in result.fcr_values %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>
+                <input class="editable" type="number" step="0.01"
+                       data-field="fcr_values"
+                       data-index="{{ loop.index0 }}"
+                       value="{{ val }}"
+                       onchange="markChanged(this)"
+                       oninput="markChanged(this)"/>
+              </td>
+              <td>
+                {% if val < 0.8 %}
+                  <span class="rating r-exc">Excellent</span>
+                {% elif val < 1.0 %}
+                  <span class="rating r-good">Good</span>
+                {% elif val < 1.2 %}
+                  <span class="rating r-avg">Average</span>
+                {% else %}
+                  <span class="rating r-poor">Poor</span>
+                {% endif %}
+              </td>
+              <td style="color:var(--grey-700);font-size:0.83rem">
+                {% if val < 0.8 %}Very efficient — bird converting feed well
+                {% elif val < 1.0 %}Normal growth pattern
+                {% elif val < 1.2 %}Feed efficiency declining, monitor closely
+                {% else %}High feed consumption vs weight gain
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="save-bar" id="savebar-fcr">
+        <p>✏️ You've edited FCR values. Save to update exports.</p>
+        <button class="btn-save" onclick="saveEdits()">💾 Save Changes</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── MEDICINE NOTES ─────────────────────────── -->
+  {% if result.medicine_notes %}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        💊 Medicine / Vaccine Notes
+        <span class="count-badge" style="background:var(--amber-100);color:#795548">
+          {{ result.medicine_notes | length }} entries
+        </span>
+      </div>
+    </div>
+    <div class="card-body">
+      {% for note in result.medicine_notes %}
+      <div class="note-item">
+        <div class="note-num">{{ loop.index }}</div>
+        <div>{{ note }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── DEBUG SECTION ─────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🔧 Debug Info</div>
+    </div>
+    <div class="card-body">
+      <details>
+        <summary>View Cleaned OCR Text</summary>
+        <div class="debug-box">{{ result.cleaned_text }}</div>
+      </details>
+      <details>
+        <summary>View Raw OCR Text</summary>
+        <div class="debug-box">{{ result.raw_text }}</div>
+      </details>
+    </div>
+  </div>
+
+  {% endif %}<!-- end if result -->
+
+</div><!-- /page -->
+
+<!-- ── JAVASCRIPT ───────────────────────────────────────────── -->
+<script>
+/* ── File selection handler ─────────────────────────────── */
+let activeInput = null;
+
+function onFileSelected(input, source) {
+  if (!input.files || !input.files[0]) return;
+  // If camera picks a file, clear gallery input and vice versa
+  if (source === 'camera') {
+    document.getElementById('fileInput').value = '';
+  } else {
+    document.getElementById('cameraInput').value = '';
+  }
+  activeInput = input;
+  const fname = input.files[0].name;
+  document.getElementById('fileName').textContent = fname;
+  document.getElementById('fileIndicator').classList.add('show');
+
+  // Make sure the form submits the correct input
+  // by setting the name on the active one and clearing the other
+  document.getElementById('fileInput').name   = source === 'gallery' ? 'image' : '';
+  document.getElementById('cameraInput').name = source === 'camera'  ? 'image' : '';
+}
+
+function showSpinner() {
+  const hasGallery = document.getElementById('fileInput').files.length > 0;
+  const hasCamera  = document.getElementById('cameraInput').files.length > 0;
+  if (hasGallery || hasCamera) {
+    document.getElementById('spinnerOverlay').classList.add('show');
+  }
+}
+
+/* ── Editable table ─────────────────────────────────────── */
+const editedData = {};   // { "abw_values": {0: newval, 1: newval}, ... }
+
+function markChanged(input) {
+  input.classList.add('changed');
+  const field = input.dataset.field;
+  const idx   = parseInt(input.dataset.index);
+  if (!editedData[field]) editedData[field] = {};
+  editedData[field][idx] = parseFloat(input.value);
+
+  // Show save bar
+  if (field === 'abw_values') showSaveBar('savebar-abw');
+  if (field === 'fcr_values') showSaveBar('savebar-fcr');
+}
+
+function showSaveBar(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('visible');
+}
+
+async function saveEdits() {
+  if (Object.keys(editedData).length === 0) return;
+
+  // Build flat patch object for the API
+  // We send the full updated arrays
+  const patch = {};
+  for (const [field, changes] of Object.entries(editedData)) {
+    // Collect current values from inputs
+    const inputs = document.querySelectorAll(`[data-field="${field}"]`);
+    const arr = [];
+    inputs.forEach(inp => arr.push(parseFloat(inp.value)));
+    patch[field] = arr;
+  }
+
+  try {
+    const resp = await fetch('/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    if (resp.ok) {
+      // Clear changed styles
+      document.querySelectorAll('.editable.changed')
+              .forEach(el => el.classList.remove('changed'));
+      // Hide save bars
+      document.querySelectorAll('.save-bar')
+              .forEach(el => el.classList.remove('visible'));
+      showToast('✅ Data saved successfully');
+    } else {
+      showToast('❌ Save failed — try again');
+    }
+  } catch (e) {
+    showToast('❌ Network error');
+  }
+}
+
+/* ── Toast ──────────────────────────────────────────────── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ── Alerts logic ───────────────────────────────────────── */
+{% if result %}
+(function buildAlerts() {
+  const abw = {{ result.abw_values | tojson }};
+  const fcr = {{ result.fcr_values | tojson }};
+  const wrap = document.getElementById('alertsWrap');
+  const alerts = [];
+
+  // Alert 1: Big drop in ABW (>15% in one week)
+  for (let i = 1; i < abw.length; i++) {
+    const drop = ((abw[i] - abw[i-1]) / abw[i-1]) * 100;
+    if (drop < -15) {
+      alerts.push({
+        type: 'danger',
+        icon: '🚨',
+        title: 'Sudden ABW Drop',
+        msg: `Weight dropped ${Math.abs(drop).toFixed(1)}% between week ${i} and week ${i+1} (${abw[i-1]}→${abw[i]} gms). Possible health issue.`
+      });
+    }
+  }
+
+  // Alert 2: FCR > 1.3 (very poor feed conversion)
+  const highFCR = fcr.filter(v => v > 1.3);
+  if (highFCR.length > 0) {
+    alerts.push({
+      type: 'warn',
+      icon: '⚠️',
+      title: 'High FCR Detected',
+      msg: `${highFCR.length} reading(s) above 1.3 (${highFCR.join(', ')}). Feed usage is high relative to weight gain.`
+    });
+  }
+
+  // Alert 3: ABW not increasing
+  let flatCount = 0;
+  for (let i = 1; i < abw.length; i++) {
+    if (abw[i] <= abw[i-1]) flatCount++;
+  }
+  if (flatCount >= 2) {
+    alerts.push({
+      type: 'warn',
+      icon: '📉',
+      title: 'Stagnant Growth',
+      msg: `ABW did not increase in ${flatCount} consecutive week(s). Growth may be stalled.`
+    });
+  }
+
+  // Alert 4: Mortality found
+  {% if result.total_mortality %}
+  alerts.push({
+    type: 'info',
+    icon: 'ℹ️',
+    title: 'Mortality Recorded',
+    msg: `Total of {{ result.total_mortality }} bird(s) mortality detected in the record.`
+  });
+  {% endif %}
+
+  // Render alerts
+  if (alerts.length === 0) {
+    wrap.innerHTML = `
+      <div class="alert alert-info">
+        <span class="alert-icon">✅</span>
+        <div class="alert-body">
+          <div class="a-title">No Anomalies Detected</div>
+          <div class="a-msg">All readings appear within normal range.</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  alerts.forEach(a => {
+    wrap.innerHTML += `
+      <div class="alert alert-${a.type}">
+        <span class="alert-icon">${a.icon}</span>
+        <div class="alert-body">
+          <div class="a-title">${a.title}</div>
+          <div class="a-msg">${a.msg}</div>
+        </div>
+      </div>`;
+  });
+})();
+
+/* ── Charts ─────────────────────────────────────────────── */
+const abwData = {{ result.abw_values | tojson }};
+const fcrData = {{ result.fcr_values | tojson }};
+const weekLabels = abwData.map((_, i) => `Wk ${i+1}`);
+const fcrLabels  = fcrData.map((_, i) => `Wk ${i+1}`);
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size   = 11;
+Chart.defaults.color       = '#757575';
+
+// ABW growth line chart
+const abwEl = document.getElementById('abwChart');
+if (abwEl && abwData.length) {
+  new Chart(abwEl, {
+    type: 'line',
+    data: {
+      labels: weekLabels,
+      datasets: [{
+        label: 'ABW (gms)',
+        data: abwData,
+        borderColor: '#2E7D32',
+        backgroundColor: 'rgba(46,125,50,0.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#2E7D32',
+        pointRadius: 4,
+        fill: true,
+        tension: 0.35,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: '#F0F0F0' }, beginAtZero: false },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+// FCR trend line chart
+const fcrEl = document.getElementById('fcrChart');
+if (fcrEl && fcrData.length) {
+  new Chart(fcrEl, {
+    type: 'line',
+    data: {
+      labels: fcrLabels,
+      datasets: [{
+        label: 'FCR',
+        data: fcrData,
+        borderColor: '#1565C0',
+        backgroundColor: 'rgba(21,101,192,0.07)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#1565C0',
+        pointRadius: 4,
+        fill: true,
+        tension: 0.35,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: '#F0F0F0' }, beginAtZero: false },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+// Weekly weight gain bar chart
+const gainEl = document.getElementById('gainChart');
+if (gainEl && abwData.length > 1) {
+  const gains = abwData.slice(1).map((v, i) => v - abwData[i]);
+  new Chart(gainEl, {
+    type: 'bar',
+    data: {
+      labels: weekLabels.slice(1),
+      datasets: [{
+        label: 'Gain (gms)',
+        data: gains,
+        backgroundColor: gains.map(g => g >= 0 ? 'rgba(46,125,50,0.75)' : 'rgba(198,40,40,0.75)'),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: '#F0F0F0' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+// FCR distribution bar chart
+const fcrBarEl = document.getElementById('fcrBarChart');
+if (fcrBarEl && fcrData.length > 1) {
+  const colors = fcrData.map(v =>
+    v < 0.8  ? 'rgba(0,105,92,0.75)'  :
+    v < 1.0  ? 'rgba(46,125,50,0.75)' :
+    v < 1.2  ? 'rgba(245,127,23,0.75)':
+               'rgba(198,40,40,0.75)'
+  );
+  new Chart(fcrBarEl, {
+    type: 'bar',
+    data: {
+      labels: fcrLabels,
+      datasets: [{
+        label: 'FCR',
+        data: fcrData,
+        backgroundColor: colors,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: '#F0F0F0' }, beginAtZero: false },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+{% endif %}
+</script>
+
+</body>
+</html>

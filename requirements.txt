@@ -1,0 +1,8 @@
+flask
+werkzeug
+opencv-python
+pytesseract
+easyocr
+numpy
+openpyxl
+reportlab
