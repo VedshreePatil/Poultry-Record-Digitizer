@@ -80,6 +80,7 @@ Built using Flask, OpenCV, EasyOCR, and Tesseract OCR, the system focuses on sma
 # 👩‍💻 Author
 
 **Vedshree Patil**
+
 Python • Flask • OpenCV • OCR • Computer Vision
 
 
