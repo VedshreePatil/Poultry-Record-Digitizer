@@ -4,6 +4,7 @@ __pycache__/
 uploads/
 *.pyc
 *.db
-processed.png
 processed_debug.jpg
 uploads/*
+*.png
+*.jpg
