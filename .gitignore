@@ -6,3 +6,4 @@ uploads/
 *.db
 processed.png
 processed_debug.jpg
+uploads/*
